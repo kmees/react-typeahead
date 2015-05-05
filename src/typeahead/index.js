@@ -23,6 +23,11 @@ var Typeahead = React.createClass({
   propTypes: {
     name: React.PropTypes.string,
     customClasses: React.PropTypes.object,
+    CustomComponent: React.PropTypes.oneOfType([
+      React.PropTypes.func,
+      React.PropTypes.string
+    ]),
+    inputQuerySel: React.PropTypes.string,
     maxVisible: React.PropTypes.number,
     options: React.PropTypes.array,
     allowCustomValues: React.PropTypes.oneOfType([
@@ -41,6 +46,8 @@ var Typeahead = React.createClass({
     return {
       options: [],
       customClasses: {},
+      CustomComponent: "input",
+      inputQuerySel: "input",
       allowCustomValues: 0,
       defaultValue: "",
       placeholder: "",
@@ -80,7 +87,7 @@ var Typeahead = React.createClass({
   },
 
   setEntryText: function(value) {
-    this.refs.entry.getDOMNode().value = value;
+    this.refs.container.getDOMNode().querySelector(this.props.inputQuerySel).value = value;
     this._onTextEntryUpdated();
   },
 
@@ -147,7 +154,7 @@ var Typeahead = React.createClass({
   },
 
   _onOptionSelected: function(option, event) {
-    var nEntry = this.refs.entry.getDOMNode();
+    var nEntry = this.refs.container.getDOMNode().querySelector(this.props.inputQuerySel);
     nEntry.focus();
     nEntry.value = option;
     this.setState({visible: this.getOptionsForValue(option, this.props.options),
@@ -157,7 +164,7 @@ var Typeahead = React.createClass({
   },
 
   _onTextEntryUpdated: function() {
-    var value = this.refs.entry.getDOMNode().value;
+    var value = this.refs.container.getDOMNode().querySelector(this.props.inputQuerySel).value;
     this.setState({visible: this.getOptionsForValue(value, this.props.options),
                    selection: null,
                    entryValue: value});
@@ -235,9 +242,8 @@ var Typeahead = React.createClass({
     var classList = classNames(classes);
 
     return (
-      <div className={classList}>
-        { this._renderHiddenInput() }
-        <input ref="entry" type="text"
+      <div ref="container" className={classList}>
+        <this.props.CustomComponent ref="entry" type="text"
           {...this.props.inputProps}
           placeholder={this.props.placeholder}
           className={inputClassList}
