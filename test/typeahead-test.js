@@ -123,7 +123,7 @@ describe('Typeahead Component', function() {
       });
     });
 
-    context('allowCustomValues', function() {
+    context('allowCustomValues as int', function() {
 
       beforeEach(function() {
         this.sinon = sinon.sandbox.create()
@@ -149,6 +149,69 @@ describe('Typeahead Component', function() {
       });
 
       it('should display custom value if input exceeds props.allowCustomValues', function() {
+        var input = this.component.refs.entry.getDOMNode();
+        input.value = "ZZZ";
+        TestUtils.Simulate.change(input);
+        var results = TestUtils.scryRenderedComponentsWithType(this.component, TypeaheadOption);
+        assert.equal(1, results.length);
+        assert.equal(false, this.selectSpy.called);
+      });
+
+      it('should call onOptionSelected when selecting from options', function() {
+        var results = simulateTextInput(this.component, 'o');
+        var firstItem = results[0].getDOMNode().innerText;
+        var node = this.component.refs.entry.getDOMNode();
+        TestUtils.Simulate.keyDown(node, { keyCode: Keyevent.DOM_VK_DOWN });
+        TestUtils.Simulate.keyDown(node, { keyCode: Keyevent.DOM_VK_DOWN });
+        TestUtils.Simulate.keyDown(node, { keyCode: Keyevent.DOM_VK_UP });
+        TestUtils.Simulate.keyDown(node, { keyCode: Keyevent.DOM_VK_RETURN });
+
+        assert.equal(true, this.selectSpy.called);
+        assert(this.selectSpy.calledWith(firstItem));
+      })
+
+      it('should call onOptionSelected when custom value is selected', function() {
+        var input = this.component.refs.entry.getDOMNode();
+        input.value = "ZZZ";
+        TestUtils.Simulate.change(input);
+        TestUtils.Simulate.keyDown(input, { keyCode: Keyevent.DOM_VK_DOWN });
+        TestUtils.Simulate.keyDown(input, { keyCode: Keyevent.DOM_VK_RETURN });
+
+        assert.equal(true, this.selectSpy.called);
+        assert(this.selectSpy.calledWith(input.value));
+      })
+
+    });
+
+    context('allowCustomValues as func', function() {
+
+      beforeEach(function() {
+        this.sinon = sinon.sandbox.create()
+        this.selectSpy = this.sinon.spy();
+        this.customValueFunc = function(val) {
+          return val.length >= 3
+        }
+        this.component = TestUtils.renderIntoDocument(<Typeahead
+          options={BEATLES}
+          allowCustomValues={this.customValueFunc}
+          onOptionSelected={this.selectSpy}
+          ></Typeahead>);
+      });
+
+      afterEach(function() {
+        this.sinon.restore();
+      })
+
+      it('should not display custom value if function returns false', function() {
+        var input = this.component.refs.entry.getDOMNode();
+        input.value = "zz";
+        TestUtils.Simulate.change(input);
+        var results = TestUtils.scryRenderedComponentsWithType(this.component, TypeaheadOption);
+        assert.equal(0, results.length);
+        assert.equal(false, this.selectSpy.called);
+      });
+
+      it('should display custom value if function returns true', function() {
         var input = this.component.refs.entry.getDOMNode();
         input.value = "ZZZ";
         TestUtils.Simulate.change(input);

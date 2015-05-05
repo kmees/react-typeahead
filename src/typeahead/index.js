@@ -8,6 +8,11 @@ var KeyEvent = require('../keyevent');
 var fuzzy = require('fuzzy');
 var classNames = require('classnames');
 
+var getType = {};
+var isFunction = function(f) {
+  return getType.toString.call(f) === "[object Function]"
+}
+
 /**
  * A "typeahead", an auto-completing text input
  *
@@ -20,7 +25,10 @@ var Typeahead = React.createClass({
     customClasses: React.PropTypes.object,
     maxVisible: React.PropTypes.number,
     options: React.PropTypes.array,
-    allowCustomValues: React.PropTypes.number,
+    allowCustomValues: React.PropTypes.oneOfType([
+      React.PropTypes.number,
+      React.PropTypes.func
+    ]),
     defaultValue: React.PropTypes.string,
     placeholder: React.PropTypes.string,
     inputProps: React.PropTypes.object,
@@ -76,9 +84,21 @@ var Typeahead = React.createClass({
     this._onTextEntryUpdated();
   },
 
+  _isValidCustomValue: function() {
+    var isValidCustomValue = false
+
+    if (isFunction(this.props.allowCustomValues)) {
+      isValidCustomValue = this.props.allowCustomValues(this.state.entryValue)
+    } else {
+      isValidCustomValue = this.props.allowCustomValues > 0 &&
+        this.state.entryValue.length >= this.props.allowCustomValues
+    }
+
+    return isValidCustomValue;
+  },
+
   _hasCustomValue: function() {
-    if (this.props.allowCustomValues > 0 &&
-      this.state.entryValue.length >= this.props.allowCustomValues &&
+    if (this._isValidCustomValue() &&
       this.state.visible.indexOf(this.state.entryValue) < 0) {
       return true;
     }
@@ -104,7 +124,7 @@ var Typeahead = React.createClass({
     }
 
     // There are no typeahead / autocomplete suggestions
-    if (!this.state.visible.length && !(this.props.allowCustomValues > 0)) {
+    if (!this.state.visible.length && !(isFunction(this.props.allowCustomValues) ||this.props.allowCustomValues > 0)) {
       return "";
     }
 
